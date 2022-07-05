@@ -508,6 +508,91 @@ describe('Call', function() {
         }).track.id).toBe("video_track");
     });
 
+    describe("should handle stream replacement", () => {
+        it("with both purpose and id", async () => {
+            const callPromise = call.placeVoiceCall();
+            await client.httpBackend.flush();
+            await callPromise;
+
+            call.getOpponentMember = () => {
+                return { userId: "@bob:bar.uk" };
+            };
+
+            call.updateRemoteSDPStreamMetadata({
+                "remote_stream1": {
+                    purpose: SDPStreamMetadataPurpose.Usermedia,
+                    id: "feed_id",
+                },
+            });
+            call.pushRemoteFeed(new MockMediaStream("remote_stream1", []));
+            const feed = call.getFeeds().find((feed) => feed.stream.id === "remote_stream1");
+
+            call.updateRemoteSDPStreamMetadata({
+                "remote_stream2": {
+                    purpose: SDPStreamMetadataPurpose.Usermedia,
+                    id: "feed_id",
+                },
+            });
+            call.pushRemoteFeed(new MockMediaStream("remote_stream2", []));
+
+            expect(feed?.stream?.id).toBe("remote_stream2");
+        });
+
+        it("with just purpose", async () => {
+            const callPromise = call.placeVoiceCall();
+            await client.httpBackend.flush();
+            await callPromise;
+
+            call.getOpponentMember = () => {
+                return { userId: "@bob:bar.uk" };
+            };
+
+            call.updateRemoteSDPStreamMetadata({
+                "remote_stream1": {
+                    purpose: SDPStreamMetadataPurpose.Usermedia,
+                },
+            });
+            call.pushRemoteFeed(new MockMediaStream("remote_stream1", []));
+            const feed = call.getFeeds().find((feed) => feed.stream.id === "remote_stream1");
+
+            call.updateRemoteSDPStreamMetadata({
+                "remote_stream2": {
+                    purpose: SDPStreamMetadataPurpose.Usermedia,
+                },
+            });
+            call.pushRemoteFeed(new MockMediaStream("remote_stream2", []));
+
+            expect(feed?.stream?.id).toBe("remote_stream2");
+        });
+
+        it("should not replace purpose is different", async () => {
+            const callPromise = call.placeVoiceCall();
+            await client.httpBackend.flush();
+            await callPromise;
+
+            call.getOpponentMember = () => {
+                return { userId: "@bob:bar.uk" };
+            };
+
+            call.updateRemoteSDPStreamMetadata({
+                "remote_stream1": {
+                    purpose: SDPStreamMetadataPurpose.Usermedia,
+                },
+            });
+            call.pushRemoteFeed(new MockMediaStream("remote_stream1", []));
+            const feed = call.getFeeds().find((feed) => feed.stream.id === "remote_stream1");
+
+            call.updateRemoteSDPStreamMetadata({
+                "remote_stream2": {
+                    purpose: SDPStreamMetadataPurpose.Screenshare,
+                },
+            });
+            call.pushRemoteFeed(new MockMediaStream("remote_stream2", []));
+
+            expect(feed?.stream?.id).toBe("remote_stream1");
+        });
+    });
+
     describe("supportsMatrixCall", () => {
         it("should return true when the environment is right", () => {
             expect(supportsMatrixCall()).toBe(true);
