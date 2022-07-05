@@ -516,7 +516,7 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
 
         const userId = this.getOpponentMember().userId;
         const purpose = this.remoteSDPStreamMetadata[stream.id].purpose;
-        const id = this.remoteSDPStreamMetadata[stream.id].purpose;
+        const id = this.remoteSDPStreamMetadata[stream.id].id;
         const audioMuted = this.remoteSDPStreamMetadata[stream.id].audio_muted;
         const videoMuted = this.remoteSDPStreamMetadata[stream.id].video_muted;
 
