@@ -365,6 +365,7 @@ describe('Call', function() {
                     [SDPStreamMetadataKey]: {
                         "remote_stream": {
                             purpose: SDPStreamMetadataPurpose.Usermedia,
+                            id: "feed_id",
                             audio_muted: true,
                             video_muted: false,
                         },
@@ -384,6 +385,7 @@ describe('Call', function() {
         );
         const feed = call.getFeeds().find((feed) => feed.stream.id === "remote_stream");
         expect(feed?.purpose).toBe(SDPStreamMetadataPurpose.Usermedia);
+        expect(feed?.id).toBe("feed_id");
         expect(feed?.isAudioMuted()).toBeTruthy();
         expect(feed?.isVideoMuted()).not.toBeTruthy();
     });
