@@ -67,6 +67,7 @@ describe('Call', function() {
         client.client.sendEvent = () => {};
         client.client.mediaHandler = new MockMediaHandler;
         client.client.getMediaHandler = () => client.client.mediaHandler;
+        client.client.isFallbackICEServerAllowed = () => true;
         client.httpBackend.when("GET", "/voip/turnServer").respond(200, {});
         call = new MatrixCall({
             client: client.client,
@@ -699,6 +700,10 @@ describe('Call', function() {
         expect(call.remoteScreensharingFeed.stream).toBe(remoteScreensharingStream);
         expect(call.remoteScreensharingStream).toBe(remoteScreensharingStream);
         expect(call.hasRemoteUserMediaAudioTrack).toBe(false);
+    });
+
+    it("should fallback to turn.matrix.org", async () => {
+        expect(call.turnServers).toStrictEqual([{ urls: ["stun:turn.matrix.org"] }]);
     });
 
     describe("supportsMatrixCall", () => {
