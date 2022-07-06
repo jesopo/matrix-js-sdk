@@ -639,6 +639,67 @@ describe('Call', function() {
         });
     });
 
+    it("feed and stream getters return correctly", async () => {
+        const localUsermediaStream = new MockMediaStream("local_usermedia_stream_id", []);
+        const localScreensharingStream = new MockMediaStream("local_screensharing_stream_id", []);
+        const remoteUsermediaStream = new MockMediaStream("remote_usermedia_stream_id", []);
+        const remoteScreensharingStream = new MockMediaStream("remote_screensharing_stream_id", []);
+
+        const callPromise = call.placeCallWithCallFeeds([
+            new CallFeed({
+                client,
+                userId: client.getUserId(),
+                // @ts-ignore Mock
+                stream: localUsermediaStream,
+                purpose: SDPStreamMetadataPurpose.Usermedia,
+                id: "local_usermedia_feed_id",
+                audioMuted: false,
+                videoMuted: false,
+            }),
+            new CallFeed({
+                client,
+                userId: client.getUserId(),
+                // @ts-ignore Mock
+                stream: localScreensharingStream,
+                purpose: SDPStreamMetadataPurpose.Screenshare,
+                id: "local_screensharing_feed_id",
+                audioMuted: false,
+                videoMuted: false,
+            }),
+        ]);
+        await client.httpBackend.flush();
+        await callPromise;
+        call.getOpponentMember = () => {
+            return { userId: "@bob:bar.uk" };
+        };
+
+        call.updateRemoteSDPStreamMetadata({
+            "remote_usermedia_stream_id": {
+                purpose: SDPStreamMetadataPurpose.Usermedia,
+                id: "remote_usermedia_feed_id",
+                audio_muted: false,
+                video_muted: false,
+            },
+            "remote_screensharing_stream_id": {
+                purpose: SDPStreamMetadataPurpose.Screenshare,
+                id: "remote_screensharing_feed_id",
+                audio_muted: false,
+                video_muted: false,
+            },
+        });
+        call.pushRemoteFeed(remoteUsermediaStream);
+        call.pushRemoteFeed(remoteScreensharingStream);
+
+        expect(call.localUsermediaFeed.stream).toBe(localUsermediaStream);
+        expect(call.localUsermediaStream).toBe(localUsermediaStream);
+        expect(call.localScreensharingFeed.stream).toBe(localScreensharingStream);
+        expect(call.localScreensharingStream).toBe(localScreensharingStream);
+        expect(call.remoteUsermediaFeed.stream).toBe(remoteUsermediaStream);
+        expect(call.remoteUsermediaStream).toBe(remoteUsermediaStream);
+        expect(call.remoteScreensharingFeed.stream).toBe(remoteScreensharingStream);
+        expect(call.remoteScreensharingStream).toBe(remoteScreensharingStream);
+    });
+
     describe("supportsMatrixCall", () => {
         it("should return true when the environment is right", () => {
             expect(supportsMatrixCall()).toBe(true);
