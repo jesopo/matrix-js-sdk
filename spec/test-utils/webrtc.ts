@@ -69,6 +69,7 @@ export class MockRTCPeerConnection {
     }
 
     addEventListener() { }
+    createDataChannel(label: string, opts: RTCDataChannelInit) { return { label, ...opts };}
     createOffer() {
         return Promise.resolve({});
     }
