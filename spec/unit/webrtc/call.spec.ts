@@ -593,6 +593,45 @@ describe('Call', function() {
         });
     });
 
+    it("should handle SDPStreamMetadata changes", async () => {
+        const callPromise = call.placeVoiceCall();
+        await client.httpBackend.flush();
+        await callPromise;
+
+        call.getOpponentMember = () => {
+            return { userId: "@bob:bar.uk" };
+        };
+
+        call.updateRemoteSDPStreamMetadata({
+            "remote_stream": {
+                purpose: SDPStreamMetadataPurpose.Usermedia,
+                audio_muted: false,
+                video_muted: false,
+                id: "feed_id1",
+            },
+        });
+        call.pushRemoteFeed(new MockMediaStream("remote_stream", []));
+        const feed = call.getFeeds().find((feed) => feed.stream.id === "remote_stream");
+
+        call.onSDPStreamMetadataChangedReceived({
+            getContent: () => ({
+                [SDPStreamMetadataKey]: {
+                    "remote_stream": {
+                        purpose: SDPStreamMetadataPurpose.Screenshare,
+                        audio_muted: true,
+                        video_muted: true,
+                        id: "feed_id2",
+                    },
+                },
+            }),
+        });
+
+        expect(feed?.purpose).toBe(SDPStreamMetadataPurpose.Screenshare);
+        expect(feed?.audioMuted).toBe(true);
+        expect(feed?.videoMuted).toBe(true);
+        expect(feed?.id).toBe("feed_id2");
+    });
+
     describe("supportsMatrixCall", () => {
         it("should return true when the environment is right", () => {
             expect(supportsMatrixCall()).toBe(true);
