@@ -698,6 +698,7 @@ describe('Call', function() {
         expect(call.remoteUsermediaStream).toBe(remoteUsermediaStream);
         expect(call.remoteScreensharingFeed.stream).toBe(remoteScreensharingStream);
         expect(call.remoteScreensharingStream).toBe(remoteScreensharingStream);
+        expect(call.hasRemoteUserMediaAudioTrack).toBe(false);
     });
 
     describe("supportsMatrixCall", () => {
