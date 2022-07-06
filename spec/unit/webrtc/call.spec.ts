@@ -26,6 +26,7 @@ import {
     MockMediaDeviceInfo,
     MockRTCPeerConnection,
 } from "../../test-utils/webrtc";
+import { CallFeed } from "../../../src/webrtc/callFeed";
 
 describe('Call', function() {
     let client;
@@ -596,6 +597,45 @@ describe('Call', function() {
             };
 
             expect(call.type).toBe(CallType.Video);
+        });
+    });
+
+    it("should correctly generate local SDPStreamMetadata", async () => {
+        const callPromise = call.placeCallWithCallFeeds([new CallFeed({
+            client,
+            // @ts-ignore Mock
+            stream: new MockMediaStream("local_stream1", [new MockMediaStreamTrack("track_id", "audio")]),
+            roomId: call.roomId,
+            userId: client.getUserId(),
+            id: "feed_id1",
+            purpose: SDPStreamMetadataPurpose.Usermedia,
+            audioMuted: false,
+            videoMuted: false,
+        })]);
+        await client.httpBackend.flush();
+        await callPromise;
+        call.getOpponentMember = () => {
+            return { userId: "@bob:bar.uk" };
+        };
+        call.pushNewLocalFeed(
+            new MockMediaStream("local_stream2", [new MockMediaStreamTrack("track_id", "video")]),
+            SDPStreamMetadataPurpose.Screenshare, "feed_id2",
+        );
+        await call.setMicrophoneMuted(true);
+
+        expect(call.getLocalSDPStreamMetadata()).toStrictEqual({
+            "local_stream1": {
+                "purpose": SDPStreamMetadataPurpose.Usermedia,
+                "id": "feed_id1",
+                "audio_muted": true,
+                "video_muted": true,
+            },
+            "local_stream2": {
+                "purpose": SDPStreamMetadataPurpose.Screenshare,
+                "id": "feed_id2",
+                "audio_muted": true,
+                "video_muted": false,
+            },
         });
     });
 
