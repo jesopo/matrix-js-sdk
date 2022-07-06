@@ -67,7 +67,6 @@ describe('Call', function() {
         client.client.sendEvent = () => {};
         client.client.mediaHandler = new MockMediaHandler;
         client.client.getMediaHandler = () => client.client.mediaHandler;
-        client.client.isFallbackICEServerAllowed = () => true;
         client.httpBackend.when("GET", "/voip/turnServer").respond(200, {});
         call = new MatrixCall({
             client: client.client,
@@ -702,8 +701,38 @@ describe('Call', function() {
         expect(call.hasRemoteUserMediaAudioTrack).toBe(false);
     });
 
-    it("should fallback to turn.matrix.org", async () => {
-        expect(call.turnServers).toStrictEqual([{ urls: ["stun:turn.matrix.org"] }]);
+    describe("should handle turn servers", () => {
+        it("should fallback if allowed", async () => {
+            client.client.isFallbackICEServerAllowed = () => true;
+            const localCall = new MatrixCall({
+                client: client.client,
+                roomId: '!room_id',
+            });
+
+            expect((localCall as any).turnServers).toStrictEqual([{ urls: ["stun:turn.matrix.org"] }]);
+        });
+
+        it("should not fallback if not allowed", async () => {
+            client.client.isFallbackICEServerAllowed = () => false;
+            const localCall = new MatrixCall({
+                client: client.client,
+                roomId: '!room_id',
+            });
+
+            expect((localCall as any).turnServers).toStrictEqual([]);
+        });
+
+        it("should not fallback if we supplied turn servers", async () => {
+            client.client.isFallbackICEServerAllowed = () => true;
+            const turnServers = [{ urls: ["turn.server.org"] }];
+            const localCall = new MatrixCall({
+                client: client.client,
+                roomId: '!room_id',
+                turnServers,
+            });
+
+            expect((localCall as any).turnServers).toStrictEqual(turnServers);
+        });
     });
 
     it("should handle creating a data channel", async () => {
