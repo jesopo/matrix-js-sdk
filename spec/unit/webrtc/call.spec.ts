@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { TestClient } from '../../TestClient';
-import { MatrixCall, CallErrorCode, CallEvent, supportsMatrixCall } from '../../../src/webrtc/call';
+import { MatrixCall, CallErrorCode, CallEvent, supportsMatrixCall, CallType } from '../../../src/webrtc/call';
 import { SDPStreamMetadataKey, SDPStreamMetadataPurpose } from '../../../src/webrtc/callEventTypes';
 import { RoomMember } from "../../../src";
 import {
@@ -557,6 +557,46 @@ describe('Call', function() {
         expect(call.opponentCaps).toBe(opponentCaps);
         expect(call.opponentCanBeTransferred()).toBe(true);
         expect(call.opponentSupportsDTMF()).toBe(false);
+    });
+
+    describe("should deduce the call type correctly", () => {
+        it("if no video", async () => {
+            const callPromise = call.placeVoiceCall();
+            await client.httpBackend.flush();
+            await callPromise;
+
+            call.getOpponentMember = () => {
+                return { userId: "@bob:bar.uk" };
+            };
+            call.pushRemoteFeed(new MockMediaStream("remote_stream1", []));
+
+            expect(call.type).toBe(CallType.Voice);
+        });
+
+        it("if remote video", async () => {
+            const callPromise = call.placeVoiceCall();
+            await client.httpBackend.flush();
+            await callPromise;
+
+            call.getOpponentMember = () => {
+                return { userId: "@bob:bar.uk" };
+            };
+            call.pushRemoteFeed(new MockMediaStream("remote_stream1", [new MockMediaStreamTrack("track_id", "video")]));
+
+            expect(call.type).toBe(CallType.Video);
+        });
+
+        it("if local video", async () => {
+            const callPromise = call.placeVideoCall();
+            await client.httpBackend.flush();
+            await callPromise;
+
+            call.getOpponentMember = () => {
+                return { userId: "@bob:bar.uk" };
+            };
+
+            expect(call.type).toBe(CallType.Video);
+        });
     });
 
     describe("supportsMatrixCall", () => {
