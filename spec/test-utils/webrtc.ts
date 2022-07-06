@@ -127,4 +127,5 @@ export class MockMediaHandler {
         return new MockMediaStream("mock_stream_from_media_handler", tracks);
     }
     stopUserMediaStream() { }
+    hasAudioDevice() {return true;}
 }
