@@ -530,6 +530,35 @@ describe('Call', function() {
         expect(feed?.id).toBe("feed_id2");
     });
 
+    it("should choose opponent member", async () => {
+        const callPromise = call.placeVoiceCall();
+        await client.httpBackend.flush();
+        await callPromise;
+
+        const opponentMember = {
+            roomId: call.roomId,
+            userId: "opponentUserId",
+        };
+        const opponentCaps = {
+            "m.call.transferee": true,
+            "m.call.dtmf": false,
+        };
+        call.chooseOpponent({
+            getContent: () => ({
+                version: 1,
+                party_id: "party_id",
+                capabilities: opponentCaps,
+            }),
+            sender: opponentMember,
+        });
+
+        expect(call.getOpponentMember()).toBe(opponentMember);
+        expect(call.opponentPartyId).toBe("party_id");
+        expect(call.opponentCaps).toBe(opponentCaps);
+        expect(call.opponentCanBeTransferred()).toBe(true);
+        expect(call.opponentSupportsDTMF()).toBe(false);
+    });
+
     describe("supportsMatrixCall", () => {
         it("should return true when the environment is right", () => {
             expect(supportsMatrixCall()).toBe(true);
