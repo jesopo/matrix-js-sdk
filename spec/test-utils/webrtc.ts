@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// eslint-disable-next-line no-restricted-imports
+import EventEmitter from "events";
+
 export const DUMMY_SDP = (
     "v=0\r\n" +
     "o=- 5022425983810148698 2 IN IP4 127.0.0.1\r\n" +
@@ -92,11 +95,13 @@ export class MockMediaStreamTrack {
     stop() { }
 }
 
-export class MockMediaStream {
+export class MockMediaStream extends EventEmitter {
     constructor(
         public id: string,
         private tracks: MockMediaStreamTrack[] = [],
-    ) { }
+    ) {
+        super();
+    }
 
     getTracks() { return this.tracks; }
     getAudioTracks() { return this.tracks.filter((track) => track.kind === "audio"); }
