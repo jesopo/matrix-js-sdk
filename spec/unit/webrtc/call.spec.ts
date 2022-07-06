@@ -701,6 +701,44 @@ describe('Call', function() {
         expect(call.hasRemoteUserMediaAudioTrack).toBe(false);
     });
 
+    it("should end call after receiving a select event with a different party id", async () => {
+        const callPromise = call.initWithInvite({
+            getContent: () => ({
+                version: 1,
+                call_id: "call_id",
+                party_id: "remote_party_id",
+                offer: {
+                    sdp: DUMMY_SDP,
+                },
+            }),
+            getLocalAge: () => null,
+        });
+        call.feeds.push(new CallFeed({
+            client,
+            userId: "remote_user_id",
+            // @ts-ignore Mock
+            stream: new MockMediaStream("remote_stream_id", [new MockMediaStreamTrack("remote_tack_id")]),
+            id: "remote_feed_id",
+            purpose: SDPStreamMetadataPurpose.Usermedia,
+        }));
+        await client.httpBackend.flush();
+        await callPromise;
+
+        const callHangupCallback = jest.fn();
+        call.on(CallEvent.Hangup, callHangupCallback);
+
+        await call.onSelectAnswerReceived({
+            getContent: () => ({
+                version: 1,
+                call_id: call.callId,
+                party_id: 'party_id',
+                selected_party_id: "different_party_id",
+            }),
+        });
+
+        expect(callHangupCallback).toHaveBeenCalled();
+    });
+
     describe("should handle turn servers", () => {
         it("should fallback if allowed", async () => {
             client.client.isFallbackICEServerAllowed = () => true;
