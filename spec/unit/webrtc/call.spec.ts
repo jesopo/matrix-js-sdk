@@ -706,6 +706,24 @@ describe('Call', function() {
         expect(call.turnServers).toStrictEqual([{ urls: ["stun:turn.matrix.org"] }]);
     });
 
+    it("should handle creating a data channel", async () => {
+        const callPromise = call.placeVoiceCall();
+        await client.httpBackend.flush();
+        await callPromise;
+        call.getOpponentMember = () => {
+            return { userId: "@bob:bar.uk" };
+        };
+
+        const dataChannelCallback = jest.fn();
+        call.on(CallEvent.DataChannel, dataChannelCallback);
+
+        const dataChannel = call.createDataChannel("data_channel_label", { id: 123 });
+
+        expect(dataChannelCallback).toHaveBeenCalledWith(dataChannel);
+        expect(dataChannel.label).toBe("data_channel_label");
+        expect(dataChannel.id).toBe(123);
+    });
+
     describe("supportsMatrixCall", () => {
         it("should return true when the environment is right", () => {
             expect(supportsMatrixCall()).toBe(true);
